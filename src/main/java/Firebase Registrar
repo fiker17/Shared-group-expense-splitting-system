@@ -1,0 +1,23 @@
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.cloud.FirestoreClient;
+import java.util.HashMap;
+import java.util.Map;
+import javax.swing.JOptionPane;
+
+public class FirebaseRegister {
+    public static void registerUser(String email, String password, AppFrame frame) {
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            Map<String, Object> user = new HashMap<>();
+            user.put("email", email);
+            user.put("password", password);
+
+            db.collection("users").document(email).set(user);
+            JOptionPane.showMessageDialog(frame, "Registered successfully!");
+            frame.showView("HOME");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(frame, "Error registering.");
+        }
+    }
+}
