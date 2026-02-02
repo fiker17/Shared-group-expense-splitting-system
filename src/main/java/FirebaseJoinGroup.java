@@ -6,27 +6,46 @@ import java.util.List;
 
 public class FirebaseJoinGroup {
 
-    public static void requestJoin(String groupId, String email) {
+    public static boolean requestJoin(String groupId, String email) {
+
         try {
             Firestore db = FirestoreClient.getFirestore();
 
-            var docRef = db.collection("groups").document(groupId);
-            var doc = docRef.get().get();
+            var ref =
+                    db.collection("groups").document(groupId);
 
-            if (!doc.exists()) return;
+            var doc = ref.get().get();
+
+            // Group not found
+            if (!doc.exists()) return false;
 
             List<String> pending =
                     (List<String>) doc.get("pendingMembers");
 
-            if (pending == null) {
+            List<String> approved =
+                    (List<String>) doc.get("approvedMembers");
+
+            if (pending == null)
                 pending = new ArrayList<>();
-            }
+
+            // Already member
+            if (approved != null && approved.contains(email))
+                return false;
+
+            // Already requested
+            if (pending.contains(email))
+                return false;
 
             pending.add(email);
-            docRef.update("pendingMembers", pending);
+
+            ref.update("pendingMembers", pending);
+
+            return true;
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        return false;
     }
 }

@@ -2,8 +2,13 @@ import javax.swing.*;
 import java.awt.*;
 
 public class CreateGroup extends JPanel {
+    private String userEmail;
+    private AppFrame frame;
 
-    public CreateGroup(AppFrame frame) {
+
+    public CreateGroup(AppFrame frame, String userEmail) {
+        this.frame = frame;
+        this.userEmail = userEmail;
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);

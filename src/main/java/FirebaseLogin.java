@@ -18,7 +18,8 @@ public class FirebaseLogin {
 
             if (doc.exists() && doc.getString("password").equals(password)) {
                 JOptionPane.showMessageDialog(frame, "Login Successful!");
-                frame.showUserHome(doc.getString("username"));
+                frame.showUserHome(email);
+
             }
 
             else {
