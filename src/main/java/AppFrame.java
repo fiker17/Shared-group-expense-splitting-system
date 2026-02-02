@@ -40,4 +40,20 @@ public class AppFrame extends JFrame {
     }
 
     public void showStartHome() { cardLayout.show(container, "START"); }
+
+    // Method to show the Admin Panel
+    public void showAdminRole(String groupId) {
+        container.add(new AdminRole(this, groupId), "ADMIN_ROLE");
+        cardLayout.show(container, "ADMIN_ROLE");
+        revalidate();
+        repaint();
+    }
+
+    // Method to show the Group Dashboard (Back button)
+    public void showGroupDashboard(String groupId) {
+        container.add(new GroupDashboard(this, groupId), "GROUP_DASHBOARD");
+        cardLayout.show(container, "GROUP_DASHBOARD");
+        revalidate();
+        repaint();
+    }
 }
