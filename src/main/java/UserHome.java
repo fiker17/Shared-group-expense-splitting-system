@@ -1,84 +1,108 @@
 import javax.swing.*;
 import java.awt.*;
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.cloud.FirestoreClient;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 
 public class UserHome extends JPanel {
+    private JLabel balanceLabel;
+    private int balance = 0;
+    private JPanel groupListPanel;
 
     public UserHome(AppFrame frame, String username) {
+        setLayout(new BorderLayout());
 
-        setLayout(null); // simple absolute layout (freshman style)
-        setBackground(new Color(230, 230, 230));
+        // TOP BAR
+        JPanel topPanel = new JPanel(new BorderLayout());
+        JLabel welcome = new JLabel("Welcome, " + username);
+        welcome.setFont(new Font("Arial", Font.BOLD, 16));
+        JButton createBtn = new JButton("+");
+        JButton logoutBtn = new JButton("Logout");
+        JPanel rightTop = new JPanel();
+        rightTop.add(createBtn); rightTop.add(logoutBtn);
+        topPanel.add(welcome, BorderLayout.WEST);
+        topPanel.add(rightTop, BorderLayout.EAST);
 
-        // Welcome text
-        JLabel welcomeLabel = new JLabel("welcome, " + username);
-        welcomeLabel.setFont(new Font("Arial", Font.PLAIN, 20));
-        welcomeLabel.setBounds(300, 30, 300, 30);
-        add(welcomeLabel);
+        // CENTER
+        JPanel center = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
 
-        // Plus button (Create Group)
-        JButton createGroupBtn = new JButton("+");
-        createGroupBtn.setFont(new Font("Arial", Font.BOLD, 20));
-        createGroupBtn.setBounds(600, 20, 50, 40);
-        add(createGroupBtn);
-
-        createGroupBtn.addActionListener(e -> {
-            JOptionPane.showMessageDialog(frame, "Create Group clicked");
+        JTextField groupIdField = new JTextField("Group ID", 15);
+        groupIdField.setForeground(Color.GRAY);
+        // Placeholder Logic
+        groupIdField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (groupIdField.getText().equals("Group ID")) {
+                    groupIdField.setText("");
+                    groupIdField.setForeground(Color.BLACK);
+                }
+            }
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (groupIdField.getText().isEmpty()) {
+                    groupIdField.setText("Group ID");
+                    groupIdField.setForeground(Color.GRAY);
+                }
+            }
         });
 
-        // Logout button
-        JButton logoutBtn = new JButton("logout");
-        logoutBtn.setBounds(660, 20, 90, 40);
-        add(logoutBtn);
+        JButton joinBtn = new JButton("Join");
+        balanceLabel = new JLabel("$" + balance);
+        balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        JButton editBalanceBtn = new JButton("Edit Balance");
 
-        logoutBtn.addActionListener(e -> frame.showView("HOME"));
+        gbc.gridy = 0; center.add(groupIdField, gbc);
+        gbc.gridy++; center.add(joinBtn, gbc);
+        gbc.gridy++; center.add(new JLabel("Balance"), gbc);
+        gbc.gridy++; center.add(balanceLabel, gbc);
+        gbc.gridy++; center.add(editBalanceBtn, gbc);
 
-        // Group ID field
-        JTextField groupIdField = new JTextField("Group ID");
-        groupIdField.setBounds(150, 90, 300, 40);
-        add(groupIdField);
+        // GROUP LIST
+        groupListPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+        JScrollPane scroll = new JScrollPane(groupListPanel);
+        scroll.setBorder(BorderFactory.createTitledBorder("Joined Groups"));
+        scroll.setPreferredSize(new Dimension(200, 200));
 
-        // Join button
-        JButton joinBtn = new JButton("join");
-        joinBtn.setBounds(500, 90, 120, 40);
-        add(joinBtn);
+        add(topPanel, BorderLayout.NORTH);
+        add(center, BorderLayout.CENTER);
+        add(scroll, BorderLayout.SOUTH);
+
+        // ACTIONS
+        createBtn.addActionListener(e -> frame.showCreateGroup());
+        logoutBtn.addActionListener(e -> frame.showStartHome());
 
         joinBtn.addActionListener(e -> {
-            String groupId = groupIdField.getText();
-            JOptionPane.showMessageDialog(frame, "Joining group: " + groupId);
+            String id = groupIdField.getText().trim();
+            if (id.isEmpty() || id.equals("Group ID")) {
+                JOptionPane.showMessageDialog(frame, "Enter Group ID");
+            } else {
+                boolean success = FirebaseJoinGroup.requestJoin(id, frame.getCurrentUserEmail());
+                if (success) JOptionPane.showMessageDialog(frame, "Invitation sent!");
+                else JOptionPane.showMessageDialog(frame, "Group not found!");
+            }
         });
 
-        // Balance label
-        JLabel balanceLabel = new JLabel("Balance");
-        balanceLabel.setOpaque(true);
-        balanceLabel.setBackground(Color.BLACK);
-        balanceLabel.setForeground(Color.WHITE);
-        balanceLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        balanceLabel.setBounds(100, 160, 250, 40);
-        add(balanceLabel);
+        editBalanceBtn.addActionListener(e -> {
+            String input = JOptionPane.showInputDialog(frame, "Enter new balance:");
+            try {
+                if (input != null) {
+                    balance = Integer.parseInt(input);
+                    balanceLabel.setText("$" + balance);
+                }
+            } catch (Exception ex) { JOptionPane.showMessageDialog(frame, "Invalid amount"); }
+        });
 
-        JLabel amountLabel = new JLabel("$4000");
-        amountLabel.setFont(new Font("Arial", Font.BOLD, 36));
-        amountLabel.setBounds(450, 150, 200, 50);
-        add(amountLabel);
+        loadGroups(frame.getCurrentUserEmail());
+    }
 
-        // Joined groups list
-        String[] groups = {
-                "school group 1",
-                "school group 2",
-                "school group 3",
-                "school group 4"
-        };
-
-        int y = 230;
-        for (String group : groups) {
-            JButton groupBtn = new JButton(group);
-            groupBtn.setBounds(100, y, 600, 45);
-            add(groupBtn);
-
-            groupBtn.addActionListener(e -> {
-                JOptionPane.showMessageDialog(frame, "Opened " + group);
-            });
-
-            y += 55;
-        }
+    private void loadGroups(String email) {
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            var query = db.collection("groups").whereArrayContains("approvedMembers", email).get().get();
+            for (QueryDocumentSnapshot doc : query.getDocuments()) {
+                JButton gBtn = new JButton(doc.getString("groupName"));
+                groupListPanel.add(gBtn);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }
