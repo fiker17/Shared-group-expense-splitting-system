@@ -31,7 +31,7 @@ public class FirebaseRegister {
             db.collection("users").document(email).set(user);
 
             JOptionPane.showMessageDialog(frame, "Registered successfully!");
-            frame.showView("HOME");
+            frame.showStartHome();
 
         } catch (Exception ex) {
             ex.printStackTrace();
