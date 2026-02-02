@@ -51,7 +51,7 @@ public class AdminRole extends JPanel {
     private void showSubPanel(JPanel panel) {
         removeAll();
         setLayout(new BorderLayout());
-        add(panel);
+        add(panel, BorderLayout.CENTER); // FIXED: Specify center
         revalidate();
         repaint();
     }

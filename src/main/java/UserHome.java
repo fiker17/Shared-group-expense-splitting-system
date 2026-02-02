@@ -3,16 +3,16 @@ import java.awt.*;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.DocumentSnapshot;
 
 public class UserHome extends JPanel {
-    // FIXED: Added class-level variables so they can be accessed inside all methods
     private AppFrame frame;
     private JLabel balanceLabel;
-    private int balance = 0;
+    private double balance = 0.0; // Changed to double for precise currency
     private JPanel groupListPanel;
 
     public UserHome(AppFrame frame, String username) {
-        this.frame = frame; // FIXED: Assigning the frame passed from the constructor
+        this.frame = frame;
         setLayout(new BorderLayout());
 
         // TOP BAR
@@ -34,7 +34,6 @@ public class UserHome extends JPanel {
         JTextField groupIdField = new JTextField("Group ID", 15);
         groupIdField.setForeground(Color.GRAY);
 
-        // Placeholder Logic
         groupIdField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent e) {
                 if (groupIdField.getText().equals("Group ID")) {
@@ -51,7 +50,7 @@ public class UserHome extends JPanel {
         });
 
         JButton joinBtn = new JButton("Join");
-        balanceLabel = new JLabel("$" + balance);
+        balanceLabel = new JLabel("$0.00"); // Default until loaded
         balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         JButton editBalanceBtn = new JButton("Edit Balance");
 
@@ -62,7 +61,7 @@ public class UserHome extends JPanel {
         gbc.gridy++; center.add(editBalanceBtn, gbc);
 
         // GROUP LIST
-        groupListPanel = new JPanel(); // Initialization
+        groupListPanel = new JPanel();
         JScrollPane scroll = new JScrollPane(groupListPanel);
         scroll.setBorder(BorderFactory.createTitledBorder("Joined Groups"));
         scroll.setPreferredSize(new Dimension(200, 200));
@@ -71,7 +70,7 @@ public class UserHome extends JPanel {
         add(center, BorderLayout.CENTER);
         add(scroll, BorderLayout.SOUTH);
 
-        // ACTIONS
+        // --- ACTIONS ---
         createBtn.addActionListener(e -> frame.showCreateGroup());
         logoutBtn.addActionListener(e -> frame.showStartHome());
 
@@ -88,15 +87,31 @@ public class UserHome extends JPanel {
 
         editBalanceBtn.addActionListener(e -> {
             String input = JOptionPane.showInputDialog(frame, "Enter new balance:");
-            try {
-                if (input != null) {
-                    balance = Integer.parseInt(input);
-                    balanceLabel.setText("$" + balance);
-                }
-            } catch (Exception ex) { JOptionPane.showMessageDialog(frame, "Invalid amount"); }
+            if (input != null) {
+                try {
+                    double newAmt = Double.parseDouble(input);
+                    // Update Firestore directly
+                    FirestoreClient.getFirestore().collection("users")
+                            .document(frame.getCurrentUserEmail()).update("balance", newAmt);
+                } catch (Exception ex) { JOptionPane.showMessageDialog(frame, "Invalid amount"); }
+            }
         });
 
+        // Load data and start the listener
+        startBalanceListener(frame.getCurrentUserEmail());
         loadGroups(frame.getCurrentUserEmail());
+    }
+
+    private void startBalanceListener(String email) {
+        Firestore db = FirestoreClient.getFirestore();
+        db.collection("users").document(email).addSnapshotListener((snapshot, e) -> {
+            if (snapshot != null && snapshot.exists()) {
+                Double cloudBal = snapshot.getDouble("balance");
+                this.balance = (cloudBal != null) ? cloudBal : 0.0;
+                SwingUtilities.invokeLater(() ->
+                        balanceLabel.setText(String.format("$%.2f", balance)));
+            }
+        });
     }
 
     private void loadGroups(String email) {
@@ -109,55 +124,35 @@ public class UserHome extends JPanel {
             groupListPanel.removeAll();
             groupListPanel.setLayout(new GridBagLayout());
             GridBagConstraints gbcList = new GridBagConstraints();
-            gbcList.gridx = 0;
-            gbcList.gridy = 0;
+            gbcList.gridx = 0; gbcList.gridy = 0;
             gbcList.weightx = 1.0;
             gbcList.fill = GridBagConstraints.HORIZONTAL;
             gbcList.insets = new Insets(5, 10, 5, 10);
 
             for (QueryDocumentSnapshot doc : query.getDocuments()) {
-                String groupId = doc.getId();
-                String groupName = doc.getString("groupName");
-
+                String gId = doc.getId();
+                String gName = doc.getString("groupName");
                 JPanel groupItem = new JPanel(new BorderLayout());
                 groupItem.setBackground(Color.WHITE);
                 groupItem.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
                 groupItem.setPreferredSize(new Dimension(0, 50));
                 groupItem.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-                JLabel nameLabel = new JLabel("  " + groupName);
+                JLabel nameLabel = new JLabel("  " + gName);
                 nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
                 groupItem.add(nameLabel, BorderLayout.CENTER);
 
-                // FIXED: 'frame' is now recognized as a class variable
                 groupItem.addMouseListener(new java.awt.event.MouseAdapter() {
                     @Override
                     public void mouseClicked(java.awt.event.MouseEvent e) {
-                        frame.showGroupDashboard(groupId);
-                    }
-                    @Override
-                    public void mouseEntered(java.awt.event.MouseEvent e) {
-                        groupItem.setBackground(new Color(240, 240, 240));
-                    }
-                    @Override
-                    public void mouseExited(java.awt.event.MouseEvent e) {
-                        groupItem.setBackground(Color.WHITE);
+                        frame.showGroupDashboard(gId);
                     }
                 });
-
                 groupListPanel.add(groupItem, gbcList);
                 gbcList.gridy++;
             }
-
-            // Spacer to keep items at the top
-            gbcList.weighty = 1.0;
-            groupListPanel.add(new JLabel(""), gbcList);
-
             groupListPanel.revalidate();
             groupListPanel.repaint();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }
