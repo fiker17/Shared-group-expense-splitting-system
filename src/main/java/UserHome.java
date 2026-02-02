@@ -5,11 +5,14 @@ import com.google.firebase.cloud.FirestoreClient;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 
 public class UserHome extends JPanel {
+    // FIXED: Added class-level variables so they can be accessed inside all methods
+    private AppFrame frame;
     private JLabel balanceLabel;
     private int balance = 0;
     private JPanel groupListPanel;
 
     public UserHome(AppFrame frame, String username) {
+        this.frame = frame; // FIXED: Assigning the frame passed from the constructor
         setLayout(new BorderLayout());
 
         // TOP BAR
@@ -30,6 +33,7 @@ public class UserHome extends JPanel {
 
         JTextField groupIdField = new JTextField("Group ID", 15);
         groupIdField.setForeground(Color.GRAY);
+
         // Placeholder Logic
         groupIdField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent e) {
@@ -58,7 +62,7 @@ public class UserHome extends JPanel {
         gbc.gridy++; center.add(editBalanceBtn, gbc);
 
         // GROUP LIST
-        groupListPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+        groupListPanel = new JPanel(); // Initialization
         JScrollPane scroll = new JScrollPane(groupListPanel);
         scroll.setBorder(BorderFactory.createTitledBorder("Joined Groups"));
         scroll.setPreferredSize(new Dimension(200, 200));
@@ -98,11 +102,62 @@ public class UserHome extends JPanel {
     private void loadGroups(String email) {
         try {
             Firestore db = FirestoreClient.getFirestore();
-            var query = db.collection("groups").whereArrayContains("approvedMembers", email).get().get();
+            var query = db.collection("groups")
+                    .whereArrayContains("approvedMembers", email)
+                    .get().get();
+
+            groupListPanel.removeAll();
+            groupListPanel.setLayout(new GridBagLayout());
+            GridBagConstraints gbcList = new GridBagConstraints();
+            gbcList.gridx = 0;
+            gbcList.gridy = 0;
+            gbcList.weightx = 1.0;
+            gbcList.fill = GridBagConstraints.HORIZONTAL;
+            gbcList.insets = new Insets(5, 10, 5, 10);
+
             for (QueryDocumentSnapshot doc : query.getDocuments()) {
-                JButton gBtn = new JButton(doc.getString("groupName"));
-                groupListPanel.add(gBtn);
+                String groupId = doc.getId();
+                String groupName = doc.getString("groupName");
+
+                JPanel groupItem = new JPanel(new BorderLayout());
+                groupItem.setBackground(Color.WHITE);
+                groupItem.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                groupItem.setPreferredSize(new Dimension(0, 50));
+                groupItem.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+                JLabel nameLabel = new JLabel("  " + groupName);
+                nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+                groupItem.add(nameLabel, BorderLayout.CENTER);
+
+                // FIXED: 'frame' is now recognized as a class variable
+                groupItem.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent e) {
+                        frame.showGroupDashboard(groupId);
+                    }
+                    @Override
+                    public void mouseEntered(java.awt.event.MouseEvent e) {
+                        groupItem.setBackground(new Color(240, 240, 240));
+                    }
+                    @Override
+                    public void mouseExited(java.awt.event.MouseEvent e) {
+                        groupItem.setBackground(Color.WHITE);
+                    }
+                });
+
+                groupListPanel.add(groupItem, gbcList);
+                gbcList.gridy++;
             }
-        } catch (Exception e) { e.printStackTrace(); }
+
+            // Spacer to keep items at the top
+            gbcList.weighty = 1.0;
+            groupListPanel.add(new JLabel(""), gbcList);
+
+            groupListPanel.revalidate();
+            groupListPanel.repaint();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

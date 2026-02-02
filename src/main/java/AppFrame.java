@@ -4,7 +4,7 @@ import java.awt.*;
 public class AppFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel container;
-    private String currentUserEmail; // Added to store session email
+    private String currentUserEmail;
 
     public AppFrame() {
         setTitle("Shared Expense App");
@@ -29,9 +29,14 @@ public class AppFrame extends JFrame {
 
     public void showView(String viewName) { cardLayout.show(container, viewName); }
 
-    public void showUserHome(String username) {
-        container.add(new UserHome(this, username), "USER_HOME");
+    /**
+     * FIX 1: Updated to ensure UserHome is properly added and shown.
+     * Use this when clicking "Back" from a Group Dashboard.
+     */
+    public void showUserHome(String emailOrUsername) {
+        container.add(new UserHome(this, emailOrUsername), "USER_HOME");
         cardLayout.show(container, "USER_HOME");
+        refresh();
     }
 
     public void showCreateGroup() {
@@ -41,19 +46,31 @@ public class AppFrame extends JFrame {
 
     public void showStartHome() { cardLayout.show(container, "START"); }
 
-    // Method to show the Admin Panel
+    /**
+     * FIX 2: Added showAdminRole method
+     * (Ensures AdminRole.java can find its target)
+     */
     public void showAdminRole(String groupId) {
         container.add(new AdminRole(this, groupId), "ADMIN_ROLE");
         cardLayout.show(container, "ADMIN_ROLE");
-        revalidate();
-        repaint();
+        refresh();
     }
 
-    // Method to show the Group Dashboard (Back button)
+    /**
+     * FIX 3: Corrected showGroupDashboard spelling
+     * (Matches the call from UserHome and AdminRole)
+     */
     public void showGroupDashboard(String groupId) {
         container.add(new GroupDashboard(this, groupId), "GROUP_DASHBOARD");
         cardLayout.show(container, "GROUP_DASHBOARD");
-        revalidate();
-        repaint();
+        refresh();
+    }
+
+    /**
+     * FIX 4: Helper to handle revalidate/repaint in one spot
+     */
+    private void refresh() {
+        container.revalidate();
+        container.repaint();
     }
 }
