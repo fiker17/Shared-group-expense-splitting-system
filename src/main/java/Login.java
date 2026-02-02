@@ -12,7 +12,7 @@ public class Login extends JPanel {
         JButton loginSubmit = new JButton("Login");
         JButton backBtn = new JButton("Back");
 
-        gbc.gridy = 0; add(new JLabel("Login"), gbc);
+        gbc.gridy = 0; add(new JLabel("Login "), gbc);
         gbc.gridy++; add(new JLabel("Email:"), gbc);
         gbc.gridy++; add(emailField, gbc);
         gbc.gridy++; add(new JLabel("Password:"), gbc);

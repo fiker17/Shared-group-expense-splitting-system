@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class AppFrame extends JFrame {
+
     private CardLayout cardLayout;
     private JPanel container;
 
@@ -14,16 +15,27 @@ public class AppFrame extends JFrame {
         cardLayout = new CardLayout();
         container = new JPanel(cardLayout);
 
-        // Add the panels
-        container.add(new Home(this), "HOME");
+        // START PAGE
+        container.add(new StartHome(this), "START");
+
+        // AUTH PAGES
         container.add(new Login(this), "LOGIN");
         container.add(new Register(this), "REGISTER");
 
         add(container);
+        cardLayout.show(container, "START");
         setVisible(true);
     }
 
     public void showView(String viewName) {
         cardLayout.show(container, viewName);
+    }
+
+    // Called after successful login
+    public void showUserHome(String username) {
+        container.add(new UserHome(this, username), "USER_HOME");
+        cardLayout.show(container, "USER_HOME");
+        revalidate();
+        repaint();
     }
 }
