@@ -38,4 +38,11 @@ public class AppFrame extends JFrame {
         revalidate();
         repaint();
     }
+    public void showStartHome() {
+        cardLayout.show(container, "START");
+    }
+    public void showCreateGroup() {
+        container.add(new CreateGroup(this), "CREATE_GROUP");
+        cardLayout.show(container, "CREATE_GROUP");
+    }
 }

@@ -39,7 +39,7 @@ public class Register extends JPanel {
         gbc.gridy++;
         add(backBtn, gbc);
 
-        backBtn.addActionListener(e -> frame.showView("HOME"));
+        backBtn.addActionListener(e -> frame.showStartHome());
 
         regSubmit.addActionListener(e -> {
             String username = usernameField.getText().trim();

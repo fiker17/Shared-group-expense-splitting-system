@@ -3,82 +3,114 @@ import java.awt.*;
 
 public class UserHome extends JPanel {
 
+    private JLabel balanceLabel;
+    private int balance = 4000; // editable balance
+
     public UserHome(AppFrame frame, String username) {
+        setLayout(new BorderLayout());
 
-        setLayout(null); // simple absolute layout (freshman style)
-        setBackground(new Color(230, 230, 230));
+        // ===== TOP BAR =====
+        JPanel topPanel = new JPanel(new BorderLayout());
 
-        // Welcome text
-        JLabel welcomeLabel = new JLabel("welcome, " + username);
-        welcomeLabel.setFont(new Font("Arial", Font.PLAIN, 20));
-        welcomeLabel.setBounds(300, 30, 300, 30);
-        add(welcomeLabel);
+        JLabel welcome = new JLabel("Welcome, " + username);
+        welcome.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 10));
 
-        // Plus button (Create Group)
-        JButton createGroupBtn = new JButton("+");
-        createGroupBtn.setFont(new Font("Arial", Font.BOLD, 20));
-        createGroupBtn.setBounds(600, 20, 50, 40);
-        add(createGroupBtn);
+        JButton createBtn = new JButton("+");
+        JButton logoutBtn = new JButton("Logout");
 
-        createGroupBtn.addActionListener(e -> {
-            JOptionPane.showMessageDialog(frame, "Create Group clicked");
+        JPanel rightTop = new JPanel();
+        rightTop.add(createBtn);
+        rightTop.add(logoutBtn);
+
+        topPanel.add(welcome, BorderLayout.WEST);
+        topPanel.add(rightTop, BorderLayout.EAST);
+
+        // ===== CENTER =====
+        JPanel center = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.gridx = 0;
+
+        JTextField groupIdField = new JTextField("Group ID", 15);
+        groupIdField.setForeground(Color.GRAY);
+
+        // transparent placeholder behavior
+        groupIdField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (groupIdField.getText().equals("Group ID")) {
+                    groupIdField.setText("");
+                    groupIdField.setForeground(Color.BLACK);
+                }
+            }
+
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (groupIdField.getText().isEmpty()) {
+                    groupIdField.setText("Group ID");
+                    groupIdField.setForeground(Color.GRAY);
+                }
+            }
         });
 
-        // Logout button
-        JButton logoutBtn = new JButton("logout");
-        logoutBtn.setBounds(660, 20, 90, 40);
-        add(logoutBtn);
+        JButton joinBtn = new JButton("Join");
 
-        logoutBtn.addActionListener(e -> frame.showView("HOME"));
+        balanceLabel = new JLabel("$" + balance);
+        balanceLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
 
-        // Group ID field
-        JTextField groupIdField = new JTextField("Group ID");
-        groupIdField.setBounds(150, 90, 300, 40);
-        add(groupIdField);
+        JButton editBalanceBtn = new JButton("Edit Balance");
 
-        // Join button
-        JButton joinBtn = new JButton("join");
-        joinBtn.setBounds(500, 90, 120, 40);
-        add(joinBtn);
+        gbc.gridy = 0;
+        center.add(groupIdField, gbc);
+
+        gbc.gridy++;
+        center.add(joinBtn, gbc);
+
+        gbc.gridy++;
+        center.add(new JLabel("Balance"), gbc);
+
+        gbc.gridy++;
+        center.add(balanceLabel, gbc);
+
+        gbc.gridy++;
+        center.add(editBalanceBtn, gbc);
+
+        // ===== GROUP LIST =====
+        JPanel groupList = new JPanel(new GridLayout(4, 1, 5, 5));
+        groupList.setBorder(BorderFactory.createTitledBorder("Your Groups"));
+
+        groupList.add(new JButton("school group 1"));
+        groupList.add(new JButton("school group 2"));
+        groupList.add(new JButton("school group 3"));
+        groupList.add(new JButton("school group 4"));
+
+        // ===== ADD =====
+        add(topPanel, BorderLayout.NORTH);
+        add(center, BorderLayout.CENTER);
+        add(groupList, BorderLayout.SOUTH);
+
+        // ===== ACTIONS =====
+
+        createBtn.addActionListener(e -> frame.showCreateGroup());
+
+        logoutBtn.addActionListener(e -> frame.showStartHome());
 
         joinBtn.addActionListener(e -> {
-            String groupId = groupIdField.getText();
-            JOptionPane.showMessageDialog(frame, "Joining group: " + groupId);
+            String id = groupIdField.getText().trim();
+            if (id.isEmpty() || id.equals("Group ID")) {
+                JOptionPane.showMessageDialog(frame, "Enter Group ID");
+            } else {
+                // simple simulation (freshman-friendly)
+                JOptionPane.showMessageDialog(frame, "Invitation sent");
+            }
         });
 
-        // Balance label
-        JLabel balanceLabel = new JLabel("Balance");
-        balanceLabel.setOpaque(true);
-        balanceLabel.setBackground(Color.BLACK);
-        balanceLabel.setForeground(Color.WHITE);
-        balanceLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        balanceLabel.setBounds(100, 160, 250, 40);
-        add(balanceLabel);
-
-        JLabel amountLabel = new JLabel("$4000");
-        amountLabel.setFont(new Font("Arial", Font.BOLD, 36));
-        amountLabel.setBounds(450, 150, 200, 50);
-        add(amountLabel);
-
-        // Joined groups list
-        String[] groups = {
-                "school group 1",
-                "school group 2",
-                "school group 3",
-                "school group 4"
-        };
-
-        int y = 230;
-        for (String group : groups) {
-            JButton groupBtn = new JButton(group);
-            groupBtn.setBounds(100, y, 600, 45);
-            add(groupBtn);
-
-            groupBtn.addActionListener(e -> {
-                JOptionPane.showMessageDialog(frame, "Opened " + group);
-            });
-
-            y += 55;
-        }
+        editBalanceBtn.addActionListener(e -> {
+            String input = JOptionPane.showInputDialog(frame, "Enter new balance:");
+            try {
+                balance = Integer.parseInt(input);
+                balanceLabel.setText("$" + balance);
+            } catch (Exception ignored) {
+                JOptionPane.showMessageDialog(frame, "Invalid amount");
+            }
+        });
     }
 }

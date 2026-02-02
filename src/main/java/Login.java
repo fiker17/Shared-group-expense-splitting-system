@@ -20,7 +20,7 @@ public class Login extends JPanel {
         gbc.gridy++; add(loginSubmit, gbc);
         gbc.gridy++; add(backBtn, gbc);
 
-        backBtn.addActionListener(e -> frame.showView("HOME"));
+        backBtn.addActionListener(e -> frame.showStartHome());
 
         loginSubmit.addActionListener(e -> {
             String email = emailField.getText();
