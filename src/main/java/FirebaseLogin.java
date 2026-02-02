@@ -7,14 +7,20 @@ public class FirebaseLogin {
         try {
             Firestore db = FirestoreClient.getFirestore();
             var doc = db.collection("users").document(email).get().get();
-            
-            if (doc.exists() && doc.getString("password").equals(password)) {
-                JOptionPane.showMessageDialog(frame, "Login Successful!");
-            } else {
-                JOptionPane.showMessageDialog(frame, "Invalid Credentials.");
+
+            if (!doc.exists()) {
+                JOptionPane.showMessageDialog(frame, "User not found");
+                return;
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+
+            if (doc.getString("password").equals(password)) {
+                String dbUsername = doc.getString("username"); // Get actual name
+                frame.setCurrentUserEmail(email); // Save email for logic
+                JOptionPane.showMessageDialog(frame, "Welcome " + dbUsername);
+                frame.showUserHome(dbUsername); // Pass name to UI
+            } else {
+                JOptionPane.showMessageDialog(frame, "Wrong password");
+            }
+        } catch (Exception ex) { ex.printStackTrace(); }
     }
 }
